@@ -59,14 +59,15 @@ async def start_parser(message: Message):
     logger.info(f'Start parser user id - {message.from_user.id}')  # запись в лог
 
 
-# хэндлер работы парсера
-@router.message(lambda x: x.text and x.text.isdigit() and len(x.text) == 9)  # проверка что id соответсвует требованию
+# хэндлер работы парсера 
+@router.message(lambda x: x.text and x.text.isdigit() and 7 <= len(x.text) <= 10)  # проверка что id соответсвует требованию
 async def working_parser(message: Message):
     if verification_mode(str(message.from_user.id)):  # если установлен режим парсинга
         set_wb_id(tg_id=message.from_user.id, wb_id=message.text)  # добавляет в базу запрашиваемый id и прибавляет к чеслу раз парсинга
 
         await message.answer(
-            text=pars_wb(message.text)  # возвращает результат парсинга
+            text=pars_wb(str(message.text)),  # возвращает результат парсинга
+            parse_mode=None
         )
         set_pars_mode(tg_id=str(message.from_user.id), var="false")  # закрывает режим парсинга wb
         logger.info(f'Working parser user id - {message.from_user.id}')  # лог запущенного парсера

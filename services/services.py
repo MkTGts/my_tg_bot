@@ -24,8 +24,8 @@ class ApiWB:
         self.name = response["data"]["products"][0]["name"]  # наименование
         self.rating = str(response["data"]["products"][0]['reviewRating'])  # рейтинг 
         self.feedbacks = str(response["data"]["products"][0]["feedbacks"])  # количество отзывов
-        self.urls_images = self.card_images()  # ссылки на изображения
         self.description = self.card_description()  # описание товара из карточки
+        self.urls_images = self.card_images()  # ссылки на изображения
 
 
     def card_description(self) -> str:
