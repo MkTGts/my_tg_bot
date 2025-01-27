@@ -24,6 +24,7 @@ def create_db() -> None:
     cursor.execute('''CREATE TABLE IF NOT EXISTS Users (  
                 id INTEGER PRIMARY KEY,
                 tg_id TEXT NOT NULL,
+                us_name TEXT,
                 in_pars TEXT NOT NULL,
                 wb_id TEXT NOT NULL,
                 count INTEGER
@@ -33,13 +34,13 @@ def create_db() -> None:
     logger.info("Create database users.db")
 
 
-def insert_datas(val: tuple[str, str, str, int]) -> None:  
+def insert_datas(val: tuple[str, str, str, str, int]) -> None:  
     '''Функция заносит значения базу данных пользователя, по задумке только если его еще нет в ней
     На вход принимает кортеж значений (in_pars, tg_id, wb_id, count)'''
     con = sqlite3.connect('./data/db/users.db')  # подключаемся к базе данных
     curs = con.cursor()  # устанавливаем курсор
 
-    curs.execute('INSERT INTO Users (in_pars, tg_id, wb_id, count) VALUES(?, ?, ?, ?)',  # (?, ?) ставится что бы потом по шаблону подать кортеж
+    curs.execute('INSERT INTO Users (in_pars, tg_id, us_name, wb_id, count) VALUES(?, ?, ?, ?, ?)',  # (?, ?) ставится что бы потом по шаблону подать кортеж
                  val)  # val должен быть кортежем
 
     con.commit()  # применяем изменения
@@ -147,3 +148,6 @@ def set_wb_id(tg_id: str, wb_id:str):
 
 if not os.path.isfile("./data/db/users.db"):  # если база данных пользователей не существует
     create_db()  # создает базу данных пользователей
+
+
+print(all_datas())  # как инструмент разработчика. для просмотра содержимого базы данных

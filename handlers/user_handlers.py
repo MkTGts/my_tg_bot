@@ -29,7 +29,7 @@ router = Router()  # инициализация роутера
 async def process_command_start(message: Message):
     # проверка есть ли пользователь в базе и если нет, то занесение в базу
     if not verification_user(tg_id=message.from_user.id):
-        insert_datas(("false", str(message.from_user.id), '0', 0, ))
+        insert_datas(("false", str(message.from_user.id), message.from_user.full_name,'0', 0, ))
 
     await message.answer(
         text=LEXICON_RU["/start"],
@@ -64,6 +64,8 @@ async def start_parser(message: Message):
 async def working_parser(message: Message):
     if verification_mode(str(message.from_user.id)):  # если установлен режим парсинга
         set_wb_id(tg_id=message.from_user.id, wb_id=message.text)  # добавляет в базу запрашиваемый id и прибавляет к чеслу раз парсинга
+
+        print(message.from_user.first_name)
 
         await message.answer(
             text=pars_wb(str(message.text)),  # возвращает результат парсинга
