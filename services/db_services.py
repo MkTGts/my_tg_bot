@@ -3,6 +3,13 @@ import logging
 import os
 
 
+# список баз
+# ./data/db/users.db   - пока что просто общая база, буду разносить 
+#
+# ./data/db/users.db  # id имена пользоватлей [prime, id, full_name]
+# ./data/db/status_parse.db  # статус парсера по id [prime, id, status]
+# ./data/db/response.db  # запросы пользоватлей [prime, id, response]
+
 # инициализация логгера
 logger = logging.getLogger(__name__)
 logging.basicConfig(
