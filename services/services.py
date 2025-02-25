@@ -68,5 +68,5 @@ class ApiWB:
 def pars_wb(id_card: str):
     resp = ApiWB(id_card=id_card)
     resp.datas_card()
-    res = f"Наименование товара: {resp.name}\nЦена товара: {resp.price[:-2]} руб.\nРейтинг товвара: {resp.rating}\nКоличество отзывов: {resp.feedbacks}\n\nСсылки на изображение:\n{'\n'.join(resp.urls_images)}\n\nОписание товара: {resp.description}"
+    res = f"Наименование товара: {resp.name}" + "Цена товара: {resp.price[:-2]} руб." + "Рейтинг товвара: {resp.rating}" + "Количество отзывов: {resp.feedbacks}" + "\n" + "Ссылки на изображение:" + "{'\n'.join(resp.urls_images)}\n\nОписание товара: {resp.description}"
     return res

@@ -1,6 +1,6 @@
 import logging
 from aiogram import F, Router
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 from keyboards.kyboards import main_kb
 from lexicon.lexicon import LEXICON_RU
@@ -47,7 +47,7 @@ async def process_command_help(message: Message):
     )
     logger.info(f'Help bot user id - {message.from_user.id}')
     
-
+'''
 # хэндлер на запуск парсера. в частонсти выставляется режим парсинга у пользователя 
 @router.message(F.text == LEXICON_RU["but_pars_wb"])
 async def start_parser(message: Message):
@@ -56,7 +56,44 @@ async def start_parser(message: Message):
     await message.answer(
         text=LEXICON_RU["if_pars_wb"],  # просит юзера ввести id товара
     )
-    logger.info(f'Start parser user id - {message.from_user.id}')  # запись в лог
+    logger.info(f'Start parser user id - {message.from_user.id}')  # запись в лог'''
+
+
+# хэндлер на запуск парсера. в частонсти выставляется режим парсинга у пользователя 
+@router.callback_query(F.data.in_("pres_pars"))
+async def start_parser(callback: CallbackQuery):
+    set_pars_mode(tg_id=str(callback.from_user.id))
+
+    await callback.message.answer(
+        text=LEXICON_RU["if_pars_wb"],  # просит юзера ввести id товара
+    )
+    logger.info(f'Start parser user id - {callback.from_user.id}')  # запись в лог
+    await callback.answer()
+
+
+# хэндлер на запуск трэкера
+@router.callback_query(F.data.in_("pres_tracker"))
+async def start_parser(callback: CallbackQuery):
+    # set_pars_mode(tg_id=str(callback.from_user.id))
+
+    await callback.message.answer(
+        text=LEXICON_RU["if_tracker_wb"],  # просит юзера ввести id товара
+    )
+    logger.info(f'Start tracker user id - {callback.from_user.id}')  # запись в лог
+    await callback.answer()
+
+
+'''# хэндлер на запуск парсера. в частонсти выставляется режим парсинга у пользователя 
+@router.callback_query(F.data.in_("pres_pars"))
+async def start_parser(message: Message):
+    set_pars_mode(tg_id=str(message.from_user.id))
+
+    await message.answer(
+        text=LEXICON_RU["if_pars_wb"],  # просит юзера ввести id товара
+    )
+    logger.info(f'Start parser user id - {message.from_user.id}')  # запись в лог'''
+
+
 
 
 # хэндлер работы парсера 
