@@ -1,9 +1,11 @@
 import random
 from requests import get
-from lexicon.lexicon import LEXICON_RU
 
 
 class ApiWB:
+    '''Класс обращается к карточке товара WB и собирает данные по API.
+    Возвращает шаблонные данные в формате строки в формате строки.'''
+
     def __init__(self, id_card):
         self.id_card = id_card
 
@@ -20,12 +22,16 @@ class ApiWB:
         '''Собирает данные из карточки товара.'''
         url = f"https://card.wb.ru/cards/v2/detail?appType=1&curr=rub&dest=-1586360&spp=30&hide_dtype=10&ab_testing=false&nm={self.id_card}"
         response = __class__.get_api(url=url)  # делает гет
-        self.price = str(response["data"]["products"][0]["sizes"][0]["price"]["total"])   # цена товара
-        self.name = response["data"]["products"][0]["name"]  # наименование
-        self.rating = str(response["data"]["products"][0]['reviewRating'])  # рейтинг 
-        self.feedbacks = str(response["data"]["products"][0]["feedbacks"])  # количество отзывов
-        self.description = self.card_description()  # описание товара из карточки
-        self.urls_images = self.card_images()  # ссылки на изображения
+        if response["data"]["products"]:
+            self.price = str(response["data"]["products"][0]["sizes"][0]["price"]["total"])   # цена товара
+            self.name = response["data"]["products"][0]["name"]  # наименование
+            self.rating = str(response["data"]["products"][0]['reviewRating'])  # рейтинг 
+            self.feedbacks = str(response["data"]["products"][0]["feedbacks"])  # количество отзывов
+            self.description = self.card_description()  # описание товара из карточки
+            self.urls_images = self.card_images()  # ссылки на изображения
+            return True
+        else: 
+            return False
 
 
     def card_description(self) -> str:
@@ -57,16 +63,36 @@ class ApiWB:
             else:
                 break
         return urls_images
+
             
     
-
-
-
+class Tracking:
+    def __init__(self, id_list: list[str]) -> None:
+        id_list: list[str] = id_list
 
 
 
 def pars_wb(id_card: str):
     resp = ApiWB(id_card=id_card)
-    resp.datas_card()
-    res = f"Наименование товара: {resp.name}" + "Цена товара: {resp.price[:-2]} руб." + "Рейтинг товвара: {resp.rating}" + "Количество отзывов: {resp.feedbacks}" + "\n" + "Ссылки на изображение:" + "{'\n'.join(resp.urls_images)}\n\nОписание товара: {resp.description}"
+    if resp.datas_card():
+        res = f"Наименование товара: {resp.name}" + "Цена товара: {resp.price[:-2]} руб." + "Рейтинг товвара: {resp.rating}" + "Количество отзывов: {resp.feedbacks}" + "\n" + "Ссылки на изображение:" + "{'\n'.join(resp.urls_images)}\n\nОписание товара: {resp.description}"
+    else:
+        res = None
     return res
+
+
+
+
+id = "216401111"
+#id = "216405814"
+
+print(pars_wb(id_card=id))
+
+#resp = ApiWB(id_card=id)
+#resp.datas_card()
+#print(resp.name)
+
+
+#resp = get(url=f"https://card.wb.ru/cards/v2/detail?appType=1&curr=rub&dest=-1586360&spp=30&hide_dtype=10&ab_testing=false&nm={id}")
+
+#print(resp.status_code)
