@@ -2,6 +2,19 @@ from environs import Env
 from dataclasses import dataclass
 
 
+'''STATUS: dict = {
+    "pars_mode": {},
+    "tracker_mode": {}
+}'''
+
+
+@dataclass
+class Status:
+    pars_mode: dict
+    tracker_mode: dict
+
+
+
 @dataclass
 class TgBot:
     bot_token: str
@@ -21,4 +34,12 @@ def load_config():
             bot_token=env("BOT")
         )
     )
+
+
+status = Status(
+    pars_mode={},
+    tracker_mode={}
+                )
+
+
 

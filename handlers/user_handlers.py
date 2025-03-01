@@ -4,6 +4,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 from keyboards.kyboards import main_kb
 from lexicon.lexicon import LEXICON_RU
+from data.config import status
 from services.services import pars_wb
 from services.db_services import create_db, verification_user, insert_datas, set_pars_mode, verification_mode, set_wb_id
 
@@ -35,7 +36,7 @@ async def process_command_start(message: Message):
         text=LEXICON_RU["/start"],
         reply_markup=main_kb
     )
-    logger.info(f'Start bot user id - {message.from_user.id}')
+    logger.info(f'Бота запуситл пользователь с id - {message.from_user.id}')
 
 
 # хэндлер на команду хелп
@@ -45,19 +46,8 @@ async def process_command_help(message: Message):
         text=LEXICON_RU["/help"],
         reply_markup=main_kb
     )
-    logger.info(f'Help bot user id - {message.from_user.id}')
+    logger.info(f'Команду /help запустил пользователь с id - {message.from_user.id}')
     
-'''
-# хэндлер на запуск парсера. в частонсти выставляется режим парсинга у пользователя 
-@router.message(F.text == LEXICON_RU["but_pars_wb"])
-async def start_parser(message: Message):
-    set_pars_mode(tg_id=str(message.from_user.id))
-
-    await message.answer(
-        text=LEXICON_RU["if_pars_wb"],  # просит юзера ввести id товара
-    )
-    logger.info(f'Start parser user id - {message.from_user.id}')  # запись в лог'''
-
 
 # хэндлер на запуск парсера. в частонсти выставляется режим парсинга у пользователя 
 @router.callback_query(F.data.in_("pres_pars"))
@@ -67,7 +57,8 @@ async def start_parser(callback: CallbackQuery):
     await callback.message.answer(
         text=LEXICON_RU["if_pars_wb"],  # просит юзера ввести id товара
     )
-    logger.info(f'Start parser user id - {callback.from_user.id}')  # запись в лог
+    logger.info(f'Парсер запустил пользователь с id - {callback.from_user.id}')  # запись в лог
+    status.pars_mode = True # ставит статус парсинга в тру
     await callback.answer()
 
 
@@ -79,27 +70,15 @@ async def start_parser(callback: CallbackQuery):
     await callback.message.answer(
         text=LEXICON_RU["if_tracker_wb"],  # просит юзера ввести id товара
     )
-    logger.info(f'Start tracker user id - {callback.from_user.id}')  # запись в лог
+    logger.info(f'Трэкер запустил пользователь с id - {callback.from_user.id}')  # запись в лог
+    status.tracker_mode = True  # ставит статус трэкера в тру
     await callback.answer()
-
-
-'''# хэндлер на запуск парсера. в частонсти выставляется режим парсинга у пользователя 
-@router.callback_query(F.data.in_("pres_pars"))
-async def start_parser(message: Message):
-    set_pars_mode(tg_id=str(message.from_user.id))
-
-    await message.answer(
-        text=LEXICON_RU["if_pars_wb"],  # просит юзера ввести id товара
-    )
-    logger.info(f'Start parser user id - {message.from_user.id}')  # запись в лог'''
-
-
 
 
 # хэндлер работы парсера 
 @router.message(lambda x: x.text and x.text.isdigit() and 7 <= len(x.text) <= 10)  # проверка что id соответсвует требованию
 async def working_parser(message: Message):
-    if verification_mode(str(message.from_user.id)):  # если установлен режим парсинга
+    if status.pars_mode :  # если установлен режим парсинга
         set_wb_id(tg_id=message.from_user.id, wb_id=message.text)  # добавляет в базу запрашиваемый id и прибавляет к чеслу раз парсинга
 
         print(message.from_user.first_name)
@@ -109,9 +88,16 @@ async def working_parser(message: Message):
             parse_mode=None
         )
         set_pars_mode(tg_id=str(message.from_user.id), var="false")  # закрывает режим парсинга wb
-        logger.info(f'Working parser user id - {message.from_user.id}')  # лог запущенного парсера
+        status.pars_mode = False  # выключает режим парсинга
+        logger.info(f'Отработал парсер у пользователя с id - {message.from_user.id}')  # лог запущенного парсера
+    elif status.tracker_mode:  # если установлен режим трэкинга
+        await message.answer(
+            text = f"Здксь будет работать режим трекинга для товара с id {message.text}"
+        )
+        status.tracker_mode = False  # выключается режим трэкинга
+        logger.info(f'Отработал трэкинг у пользователя с id - {message.from_user.id}')
     else:
         await message.answer(
-            text=LEXICON_RU["not_pars_mode"],
+            text=LEXICON_RU["not_mode"],
         )
-
+        logger.info(f'Пользователь с id {message.from_user.id} ввел id товара, невключив режим')
