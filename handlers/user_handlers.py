@@ -6,7 +6,7 @@ from keyboards.kyboards import main_kb
 from lexicon.lexicon import LEXICON_RU
 from data.config import status
 from services.services import pars_wb
-from services.db_services import create_db, verification_user, insert_datas, set_pars_mode, verification_mode, set_wb_id
+from services.db_services import create_db, verification_user, insert_user_to_db, set_wb_id
 
 
 
@@ -30,7 +30,7 @@ router = Router()  # инициализация роутера
 async def process_command_start(message: Message):
     # проверка есть ли пользователь в базе и если нет, то занесение в базу
     if not verification_user(tg_id=message.from_user.id):
-        insert_datas(("false", str(message.from_user.id), message.from_user.full_name,'0', 0, ))
+        insert_user_to_db((str(message.from_user.id), message.from_user.full_name, '0'))
 
     await message.answer(
         text=LEXICON_RU["/start"],
@@ -52,7 +52,6 @@ async def process_command_help(message: Message):
 # хэндлер на запуск парсера. в частонсти выставляется режим парсинга у пользователя 
 @router.callback_query(F.data.in_("pres_pars"))
 async def start_parser(callback: CallbackQuery):
-    set_pars_mode(tg_id=str(callback.from_user.id))
 
     await callback.message.answer(
         text=LEXICON_RU["if_pars_wb"],  # просит юзера ввести id товара
@@ -78,24 +77,27 @@ async def start_parser(callback: CallbackQuery):
 # хэндлер работы парсера 
 @router.message(lambda x: x.text and x.text.isdigit() and 7 <= len(x.text) <= 10)  # проверка что id соответсвует требованию
 async def working_parser(message: Message):
-    if status.pars_mode :  # если установлен режим парсинга
-        set_wb_id(tg_id=message.from_user.id, wb_id=message.text)  # добавляет в базу запрашиваемый id и прибавляет к чеслу раз парсинга
 
-        print(message.from_user.first_name)
+    if status.pars_mode :  # если установлен режим парсинга
+
+        print(message.from_user.first_name)  # для меня. выводит имя пользователя в консоле
 
         await message.answer(
             text=pars_wb(str(message.text)),  # возвращает результат парсинга
             parse_mode=None
         )
-        set_pars_mode(tg_id=str(message.from_user.id), var="false")  # закрывает режим парсинга wb
         status.pars_mode = False  # выключает режим парсинга
         logger.info(f'Отработал парсер у пользователя с id - {message.from_user.id}')  # лог запущенного парсера
+
     elif status.tracker_mode:  # если установлен режим трэкинга
+        set_wb_id(tg_id=message.from_user.id, wb_id=message.text)  # добавляет в базу запрашиваемый id и прибавляет к чеслу раз парсинга
+
         await message.answer(
             text = f"Здксь будет работать режим трекинга для товара с id {message.text}"
         )
         status.tracker_mode = False  # выключается режим трэкинга
         logger.info(f'Отработал трэкинг у пользователя с id - {message.from_user.id}')
+
     else:
         await message.answer(
             text=LEXICON_RU["not_mode"],
