@@ -39,6 +39,17 @@ async def process_command_start(message: Message):
     logger.info(f'Бота запуситл пользователь с id - {message.from_user.id}')
 
 
+# хэндрел на команду /menu, которая выводит пользователю inline клавиатуры с основными функциями
+@router.message(Command(commands="menu"))
+async def process_command_menu(message: Message):
+
+    await message.answer(
+        text=LEXICON_RU["/menu"],
+        reply_markup=main_kb
+    )
+    logger.info(f'Пользователь с id запросил меню - {message.from_user.id}')
+
+
 # хэндлер на команду хелп
 @router.message(Command(commands="help"))
 async def process_command_help(message: Message):

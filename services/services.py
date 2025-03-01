@@ -68,7 +68,7 @@ class ApiWB:
     
 class Tracking:
     def __init__(self, id_list: list[str]) -> None:
-        id_list: list[str] = id_list
+        id_list: list[str] = id_list  # список id товаров с wb, которые добавил пользователь
 
 
 
@@ -81,18 +81,3 @@ def pars_wb(id_card: str):
     return res
 
 
-
-
-id = "216401111"
-#id = "216405814"
-
-print(pars_wb(id_card=id))
-
-#resp = ApiWB(id_card=id)
-#resp.datas_card()
-#print(resp.name)
-
-
-#resp = get(url=f"https://card.wb.ru/cards/v2/detail?appType=1&curr=rub&dest=-1586360&spp=30&hide_dtype=10&ab_testing=false&nm={id}")
-
-#print(resp.status_code)
