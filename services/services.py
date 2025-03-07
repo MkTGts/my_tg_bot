@@ -81,9 +81,10 @@ async def checking_price(old_price: int, new_price: int):
             
     
 class Tracking:
-    def __init__(self, tg_id: str, username: str, wb_id: str) -> None:
+    def __init__(self, tg_id: str, username: str, wb_id: str, stop_price: int=0) -> None:
         self.wb_id: str = wb_id  # подаваемый id товара 
-        self.tg_id: str = tg_id
+        self.tg_id: str = tg_id  # tr id пользователя
+        self.stop_price = stop_price  # цена при которой отправляется оповещение пользователю
         self.username: str = username
 
         pars = ParsWB(id_card=wb_id)  # создание объекта парсера
@@ -101,7 +102,7 @@ class Tracking:
         # создает таблицу пользователей
         cursor.execute('''CREATE TABLE IF NOT EXISTS Users (  
                     user_id INTEGER PRIMARY KEY,
-                    tg_id INTEGER, 
+                    tg_id INTEGER UNIQUE, 
                     username TEXT NOT NULL
         )''')  
         connection.commit()  # выполняем изменения(совершаем)
@@ -111,7 +112,8 @@ class Tracking:
                         product_id INTEGER PRIMARY KEY,
                         wb_id TEXT UNIQUE, 
                         product_name TEXT NOT NULL,
-                        price INTEGER
+                        price INTEGER,
+                        stop_price Integer
         )''')
         connection.commit()  # выполняем изменения(совершаем)
 
@@ -128,6 +130,7 @@ class Tracking:
         connection.close()  # закрываем соединение
 
 
+
     def _insert_user_to_db(self) -> None:  
         '''Функция заносит пользователя в базу данных, только если его еще нет в ней
         И добавлеяет товар к пользователю.
@@ -135,14 +138,88 @@ class Tracking:
         connection = sqlite3.connect('./data/db/_users.db')  # подключаемся к базе данных
         cursor = connection.cursor()  # устанавливаем курсор
 
-        cursor.execute('INSERT INTO Users (tg_id, user_name) VALUES(?, ?)',  # (?, ?) заносится пользователь если нет в таблице 
+        cursor.execute('INSERT OR IGNORE INTO Users (tg_id, user_name) VALUES(?, ?)',  # (?, ?) заносится пользователь если нет в таблице 
                     (self.tg_id, self.username)) 
         connection.commit()  # применяем изменения
+
         connection.close()  # закрываем соединение
 
 
-    def search_old_price(self) -> int | None:
-        '''Функция находит старую цену из таблицы, если она там была'''
+
+    def _insert_wb_id_to_db(self) -> None:
+        '''Метод вставляет товар в таблицу, если его там еще нет'''
+        connection = sqlite3.connect('./data/db/_users.db')  # подключаемся к базе данных
+        cursor = connection.cursor()  # устанавливаем курсор
+
+
+        cursor.execute('INSERT OR IGNORE INTO Products (wb_id, product_name, price, stop_price) VALUES(?, ?, ?, ?)',  # (?, ?) заносится товар если нет в таблице 
+                    (self.wb_id, self.product_name, self.new_price, self.stop_price)) 
+        connection.commit()  # применяем изменения
+
+        connection.close()  # закрываем соединение
+
+        
+
+    def _tables_ids(self) -> None:
+        '''Метод достает табличные id пользователя и товара из таблиц'''
+        connection = sqlite3.connect('./data/db/_users.db')  # подключаемся к базе данных
+        cursor = connection.cursor()  # устанавливаем курсор
+
+        cursor.execute('SELECT user_id FROM Users WHERE tg_id = ?', (self.tg_id, ))
+        self.user_id = cursor.fetchall()[0][0]  # достает user_id пользователя в таблице
+
+        cursor.execute('SELECT product_id FROM Products WHERE wb_id = ?', (self.wb_id, ))
+        self.user_id = cursor.fetchall()[0][0]  # достает product_id товара в таблице
+
+        connection.close()  # закрываем соединение
+
+
+
+    def _search_old_price(self) -> int | None:
+        '''Метод достает цену которая записана для товара в таблице.'''
+        connection = sqlite3.connect('./data/db/_users.db')  # подключаемся к базе данных
+        cursor = connection.cursor()  # устанавливаем курсор
+
+        cursor.execute('SELECT price, stop_price FROM Products WHERE wb_id = ?', (self.wb_id, ))
+        self.old_price = cursor.fetchall()[0[0]]
+        self.stop_price = cursor.fetchall()[0][1]
+        
+
+        connection.close()  # закрываем соединение
+
+
+
+    def _replace_price(self) -> None:
+        '''Метод заменяет цену в таблицы на новую'''
+        connection = sqlite3.connect('./data/db/_users.db')  # подключаемся к базе данных
+        cursor = connection.cursor()  # устанавливаем курсор
+
+        cursor.execute('UPDATE Products SET price = ? WHERE wb_id = ?', (self.new_price, self.wb_id))
+
+        connection.commit()  # применяем изменения
+        connection.close()  # закрываем соединение
+
+        
+
+    def check_price(self) -> None: 
+        '''Метод сравниванивает новую цену с ценой записанной в таблице. 
+        Если цена новая ниже, записывает ее в таблицу'''
+        self._search_old_price()  #  метод достающий цену из таблицы
+
+        if self.new_price <= self.stop_price:  # если новый цена ниже или равна ожидаемой цене оповещаем пользователя об этом
+            pass  # доделать механизм
+        else:  
+            if self.new_price < self.old_price:  # если новая цена ниже той что есть в таблице - переписываем в таблице
+                self._replace_price() 
+            else:  # если новая цена выше имеющейся или искомой цены ничего не делаем
+                return None  # тут тоже наверное доделать механизм
+
+
+        
+        
+
+
+
 
     
 
