@@ -1,8 +1,10 @@
 import random
 from requests import get
+import sqlite3
 
 
-class ApiWB:
+
+class ParsWB:
     '''Класс обращается к карточке товара WB и собирает данные по API.
     Возвращает шаблонные данные в формате строки в формате строки.'''
 
@@ -23,12 +25,13 @@ class ApiWB:
         url = f"https://card.wb.ru/cards/v2/detail?appType=1&curr=rub&dest=-1586360&spp=30&hide_dtype=10&ab_testing=false&nm={self.id_card}"
         response = __class__.get_api(url=url)  # делает гет
         if response["data"]["products"]:
-            self.price = str(response["data"]["products"][0]["sizes"][0]["price"]["total"])   # цена товара
-            self.name = response["data"]["products"][0]["name"]  # наименование
-            self.rating = str(response["data"]["products"][0]['reviewRating'])  # рейтинг 
-            self.feedbacks = str(response["data"]["products"][0]["feedbacks"])  # количество отзывов
-            self.description = self.card_description()  # описание товара из карточки
-            self.urls_images = self.card_images()  # ссылки на изображения
+            self.price: str = str(response["data"]["products"][0]["sizes"][0]["price"]["total"])   # цена товара
+            self.price_for_track = int(self.price[:-2])  # возвращает цены в инте для трэгинга цен
+            self.name: str = response["data"]["products"][0]["name"]  # наименование
+            self.rating: str = str(response["data"]["products"][0]['reviewRating'])  # рейтинг 
+            self.feedbacks: str = str(response["data"]["products"][0]["feedbacks"])  # количество отзывов
+            self.description: str = self.card_description()  # описание товара из карточки
+            self.urls_images: list = self.card_images()  # ссылки на изображения
             return True
         else: 
             return False
@@ -63,21 +66,105 @@ class ApiWB:
             else:
                 break
         return urls_images
+    
+
+
+async def checking_price(old_price: int, new_price: int):
+    '''Асинхронная функция провереят стала ли цена ниже.
+    На вход принимает старую цену и новую. Возвращает булево значение.'''
+    if new_price < old_price:
+        pass
+    else:
+        return False
+
 
             
     
 class Tracking:
-    def __init__(self, id_list: list[str]) -> None:
-        id_list: list[str] = id_list  # список id товаров с wb, которые добавил пользователь
+    def __init__(self, tg_id: str, username: str, wb_id: str) -> None:
+        self.wb_id: str = wb_id  # подаваемый id товара 
+        self.tg_id: str = tg_id
+        self.username: str = username
+
+        pars = ParsWB(id_card=wb_id)  # создание объекта парсера
+        pars.datas_card()  # выполняется процесс парсинга товара
+        self.product_name: str = pars.name  # имя товара
+        self.new_price: str = pars.price_for_track  # новая цена товара
+
+
+
+    def _create_db(self) -> None:
+        '''Функция создает базу данных'''
+        connection = sqlite3.connect('./data/db/_users.db')  # утанавливаем и создает базу данных
+        cursor = connection.cursor()  # устанавливаем курсор
+        
+        # создает таблицу пользователей
+        cursor.execute('''CREATE TABLE IF NOT EXISTS Users (  
+                    user_id INTEGER PRIMARY KEY,
+                    tg_id INTEGER, 
+                    username TEXT NOT NULL
+        )''')  
+        connection.commit()  # выполняем изменения(совершаем)
+
+        # создает таблицу товаров
+        cursor.execute('''CREATE TABLE IF NOT EXISTS Products (
+                        product_id INTEGER PRIMARY KEY,
+                        wb_id TEXT UNIQUE, 
+                        product_name TEXT NOT NULL,
+                        price INTEGER
+        )''')
+        connection.commit()  # выполняем изменения(совершаем)
+
+        # создает таблицу подписок
+        cursor.execute('''CREATE TABLE IF NOT EXISTS Subscriptions (
+                    sub_id INTEGER PRIMARY KEY,
+                    user_id INTEGER,
+                    product_id INTERGER,
+                    FOREIGN KEY (user_id) REFERENCES Users(user_id),
+                    FOREIGN KEY (product_id) REFERENCES Products(product_id)
+        )''')
+        connection.commit()  # выполняем изменения(совершаем)
+
+        connection.close()  # закрываем соединение
+
+
+    def _insert_user_to_db(self) -> None:  
+        '''Функция заносит пользователя в базу данных, только если его еще нет в ней
+        И добавлеяет товар к пользователю.
+        На вход принимает кортеж значений (tg_id, username)'''
+        connection = sqlite3.connect('./data/db/_users.db')  # подключаемся к базе данных
+        cursor = connection.cursor()  # устанавливаем курсор
+
+        cursor.execute('INSERT INTO Users (tg_id, user_name) VALUES(?, ?)',  # (?, ?) заносится пользователь если нет в таблице 
+                    (self.tg_id, self.username)) 
+        connection.commit()  # применяем изменения
+        connection.close()  # закрываем соединение
+
+
+    def search_old_price(self) -> int | None:
+        '''Функция находит старую цену из таблицы, если она там была'''
+
+    
+
+
+
 
 
 
 def pars_wb(id_card: str):
-    resp = ApiWB(id_card=id_card)
+    resp = ParsWB(id_card=id_card)
     if resp.datas_card():
-        res = f"Наименование товара: {resp.name}" + "Цена товара: {resp.price[:-2]} руб." + "Рейтинг товвара: {resp.rating}" + "Количество отзывов: {resp.feedbacks}" + "\n" + "Ссылки на изображение:" + "{'\n'.join(resp.urls_images)}\n\nОписание товара: {resp.description}"
+        res = f"Наименование товара: {resp.name}\nЦена товара: {resp.price[:-2]} руб.\nРейтинг товвара: {resp.rating}\nКоличество отзывов: {resp.feedbacks}\n\nСсылки на изображение:\n{'\n'.join(resp.urls_images)}\n\nОписание товара: {resp.description}"
     else:
         res = None
     return res
+
+
+
+
+'''
+resp = ParsWB(id_card=str(110291183))
+resp.datas_card()
+print(int(resp.price[:-2]) > 4000)'''
 
 

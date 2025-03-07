@@ -2,18 +2,6 @@ from environs import Env
 from dataclasses import dataclass
 
 
-'''STATUS: dict = {
-    "pars_mode": {},
-    "tracker_mode": {}
-}'''
-
-
-@dataclass
-class Status:
-    pars_mode: dict
-    tracker_mode: dict
-
-
 
 @dataclass
 class TgBot:
@@ -36,10 +24,15 @@ def load_config():
     )
 
 
+
+@dataclass
+class Status:
+    pars_mode: dict  # режим парсинга
+    tracker_mode: dict  # режим трэкинга цен на товары
+
+
 status = Status(
     pars_mode={},
     tracker_mode={}
                 )
-
-
 
