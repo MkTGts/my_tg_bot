@@ -68,6 +68,9 @@ class ParsWB:
         return urls_images
     
 
+#pars = ParsWB()
+
+
 
 async def checking_price(old_price: int, new_price: int):
     '''Асинхронная функция провереят стала ли цена ниже.
@@ -133,12 +136,11 @@ class Tracking:
 
     def _insert_user_to_db(self) -> None:  
         '''Функция заносит пользователя в базу данных, только если его еще нет в ней
-        И добавлеяет товар к пользователю.
         На вход принимает кортеж значений (tg_id, username)'''
         connection = sqlite3.connect('./data/db/_users.db')  # подключаемся к базе данных
         cursor = connection.cursor()  # устанавливаем курсор
 
-        cursor.execute('INSERT OR IGNORE INTO Users (tg_id, user_name) VALUES(?, ?)',  # (?, ?) заносится пользователь если нет в таблице 
+        cursor.execute('INSERT OR IGNORE INTO Users (tg_id, username) VALUES(?, ?)',  # (?, ?) заносится пользователь если нет в таблице 
                     (self.tg_id, self.username)) 
         connection.commit()  # применяем изменения
 
@@ -181,8 +183,9 @@ class Tracking:
         cursor = connection.cursor()  # устанавливаем курсор
 
         cursor.execute('SELECT price, stop_price FROM Products WHERE wb_id = ?', (self.wb_id, ))
-        self.old_price = cursor.fetchall()[0[0]]
-        self.stop_price = cursor.fetchall()[0][1]
+        values = cursor.fetchall()
+        self.old_price = values[0][0]
+        self.stop_price = values[0][1]
         
 
         connection.close()  # закрываем соединение
@@ -206,25 +209,16 @@ class Tracking:
         Если цена новая ниже, записывает ее в таблицу'''
         self._search_old_price()  #  метод достающий цену из таблицы
 
-        if self.new_price <= self.stop_price:  # если новый цена ниже или равна ожидаемой цене оповещаем пользователя об этом
+        if int(self.new_price) <= self.stop_price:  # если новый цена ниже или равна ожидаемой цене оповещаем пользователя об этом
             pass  # доделать механизм
         else:  
-            if self.new_price < self.old_price:  # если новая цена ниже той что есть в таблице - переписываем в таблице
+            if int(self.new_price) < self.old_price:  # если новая цена ниже той что есть в таблице - переписываем в таблице
                 self._replace_price() 
             else:  # если новая цена выше имеющейся или искомой цены ничего не делаем
                 return None  # тут тоже наверное доделать механизм
 
 
         
-        
-
-
-
-
-    
-
-
-
 
 
 
